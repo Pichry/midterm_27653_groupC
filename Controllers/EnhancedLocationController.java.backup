@@ -1,0 +1,373 @@
+package com.smartsalon.controller;
+
+import com.smartsalon.dto.*;
+import com.smartsalon.model.*;
+import com.smartsalon.service.LocationService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/locations")
+@CrossOrigin(origins = "*")
+public class EnhancedLocationController {
+
+    @Autowired
+    private LocationService locationService;
+
+    // ==================== PROVINCE ENDPOINTS ====================
+    
+    @PostMapping("/provinces")
+    public ResponseEntity<Province> createProvince(@Valid @RequestBody ProvinceRequest request) {
+        Province province = locationService.createProvince(request);
+        return new ResponseEntity<>(province, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/provinces")
+    public ResponseEntity<List<Province>> getAllProvinces() {
+        List<Province> provinces = locationService.getAllProvinces();
+        return ResponseEntity.ok(provinces);
+    }
+
+    @GetMapping("/provinces/paginated")
+    public ResponseEntity<Page<Province>> getAllProvincesPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<Province> provinces = locationService.getAllProvincesPaginated(pageable);
+        return ResponseEntity.ok(provinces);
+    }
+
+    @GetMapping("/provinces/{id}")
+    public ResponseEntity<Province> getProvinceById(@PathVariable Long id) {
+        Optional<Province> province = locationService.getProvinceByIdOptional(id);
+        return province.map(ResponseEntity::ok)
+                      .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/provinces/{id}")
+    public ResponseEntity<Province> updateProvince(@PathVariable Long id, @Valid @RequestBody ProvinceRequest request) {
+        try {
+            Province province = locationService.updateProvince(id, request);
+            return ResponseEntity.ok(province);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/provinces/{id}")
+    public ResponseEntity<Void> deleteProvince(@PathVariable Long id) {
+        locationService.deleteProvince(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ==================== DISTRICT ENDPOINTS ====================
+    
+    @PostMapping("/districts")
+    public ResponseEntity<District> createDistrict(@Valid @RequestBody DistrictRequest request) {
+        try {
+            District district = locationService.createDistrict(request);
+            return new ResponseEntity<>(district, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/districts")
+    public ResponseEntity<List<District>> getDistrictsByProvince(@RequestParam Long provinceId) {
+        List<District> districts = locationService.getDistrictsByProvince(provinceId);
+        return ResponseEntity.ok(districts);
+    }
+
+    @GetMapping("/districts/paginated")
+    public ResponseEntity<Page<District>> getDistrictsPaginated(
+            @RequestParam(required = false) Long provinceId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<District> districts;
+        if (provinceId != null) {
+            districts = locationService.getDistrictsByProvincePaginated(provinceId, pageable);
+        } else {
+            districts = locationService.getAllDistrictsPaginated(pageable);
+        }
+        return ResponseEntity.ok(districts);
+    }
+
+    @GetMapping("/districts/{id}")
+    public ResponseEntity<District> getDistrictById(@PathVariable Long id) {
+        Optional<District> district = locationService.getDistrictByIdOptional(id);
+        return district.map(ResponseEntity::ok)
+                      .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/districts/{id}")
+    public ResponseEntity<District> updateDistrict(@PathVariable Long id, @Valid @RequestBody DistrictRequest request) {
+        try {
+            District district = locationService.updateDistrict(id, request);
+            return ResponseEntity.ok(district);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/districts/{id}")
+    public ResponseEntity<Void> deleteDistrict(@PathVariable Long id) {
+        locationService.deleteDistrict(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ==================== SECTOR ENDPOINTS ====================
+    
+    @PostMapping("/sectors")
+    public ResponseEntity<Sector> createSector(@Valid @RequestBody SectorRequest request) {
+        try {
+            Sector sector = locationService.createSector(request);
+            return new ResponseEntity<>(sector, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/sectors")
+    public ResponseEntity<List<Sector>> getSectorsByDistrict(@RequestParam Long districtId) {
+        List<Sector> sectors = locationService.getSectorsByDistrict(districtId);
+        return ResponseEntity.ok(sectors);
+    }
+
+    @GetMapping("/sectors/paginated")
+    public ResponseEntity<Page<Sector>> getSectorsPaginated(
+            @RequestParam(required = false) Long districtId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<Sector> sectors;
+        if (districtId != null) {
+            sectors = locationService.getSectorsByDistrictPaginated(districtId, pageable);
+        } else {
+            sectors = locationService.getAllSectorsPaginated(pageable);
+        }
+        return ResponseEntity.ok(sectors);
+    }
+
+    @GetMapping("/sectors/{id}")
+    public ResponseEntity<Sector> getSectorById(@PathVariable Long id) {
+        Optional<Sector> sector = locationService.getSectorByIdOptional(id);
+        return sector.map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/sectors/{id}")
+    public ResponseEntity<Sector> updateSector(@PathVariable Long id, @Valid @RequestBody SectorRequest request) {
+        try {
+            Sector sector = locationService.updateSector(id, request);
+            return ResponseEntity.ok(sector);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/sectors/{id}")
+    public ResponseEntity<Void> deleteSector(@PathVariable Long id) {
+        locationService.deleteSector(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ==================== CELL ENDPOINTS ====================
+    
+    @PostMapping("/cells")
+    public ResponseEntity<Cell> createCell(@Valid @RequestBody CellRequest request) {
+        try {
+            Cell cell = locationService.createCell(request);
+            return new ResponseEntity<>(cell, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/cells")
+    public ResponseEntity<List<Cell>> getCellsBySector(@RequestParam Long sectorId) {
+        List<Cell> cells = locationService.getCellsBySector(sectorId);
+        return ResponseEntity.ok(cells);
+    }
+
+    @GetMapping("/cells/paginated")
+    public ResponseEntity<Page<Cell>> getCellsPaginated(
+            @RequestParam(required = false) Long sectorId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<Cell> cells;
+        if (sectorId != null) {
+            cells = locationService.getCellsBySectorPaginated(sectorId, pageable);
+        } else {
+            cells = locationService.getAllCellsPaginated(pageable);
+        }
+        return ResponseEntity.ok(cells);
+    }
+
+    @GetMapping("/cells/{id}")
+    public ResponseEntity<Cell> getCellById(@PathVariable Long id) {
+        Optional<Cell> cell = locationService.getCellByIdOptional(id);
+        return cell.map(ResponseEntity::ok)
+                  .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/cells/{id}")
+    public ResponseEntity<Cell> updateCell(@PathVariable Long id, @Valid @RequestBody CellRequest request) {
+        try {
+            Cell cell = locationService.updateCell(id, request);
+            return ResponseEntity.ok(cell);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/cells/{id}")
+    public ResponseEntity<Void> deleteCell(@PathVariable Long id) {
+        locationService.deleteCell(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ==================== VILLAGE ENDPOINTS ====================
+    
+    @PostMapping("/villages")
+    public ResponseEntity<Village> createVillage(@Valid @RequestBody VillageRequest request) {
+        try {
+            Village village = locationService.createVillage(request);
+            return new ResponseEntity<>(village, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/villages")
+    public ResponseEntity<List<Village>> getVillagesByCell(@RequestParam Long cellId) {
+        List<Village> villages = locationService.getVillagesByCell(cellId);
+        return ResponseEntity.ok(villages);
+    }
+
+    @GetMapping("/villages/paginated")
+    public ResponseEntity<Page<Village>> getVillagesPaginated(
+            @RequestParam(required = false) Long cellId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        
+        Sort sort = direction.equalsIgnoreCase("desc") 
+            ? Sort.by(sortBy).descending() 
+            : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<Village> villages;
+        if (cellId != null) {
+            villages = locationService.getVillagesByCellPaginated(cellId, pageable);
+        } else {
+            villages = locationService.getAllVillagesPaginated(pageable);
+        }
+        return ResponseEntity.ok(villages);
+    }
+
+    @GetMapping("/villages/{id}")
+    public ResponseEntity<Village> getVillageById(@PathVariable Long id) {
+        Optional<Village> village = locationService.getVillageByIdOptional(id);
+        return village.map(ResponseEntity::ok)
+                     .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/villages/{id}/full")
+    public ResponseEntity<Village> getVillageWithFullHierarchy(@PathVariable Long id) {
+        try {
+            Village village = locationService.getVillageWithFullHierarchy(id);
+            return ResponseEntity.ok(village);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/villages/{id}")
+    public ResponseEntity<Village> updateVillage(@PathVariable Long id, @Valid @RequestBody VillageRequest request) {
+        try {
+            Village village = locationService.updateVillage(id, request);
+            return ResponseEntity.ok(village);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/villages/{id}")
+    public ResponseEntity<Void> deleteVillage(@PathVariable Long id) {
+        locationService.deleteVillage(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ==================== SEARCH ENDPOINTS ====================
+    
+    @GetMapping("/villages/search")
+    public ResponseEntity<List<Village>> searchVillages(@RequestParam String name) {
+        List<Village> villages = locationService.searchVillagesByName(name);
+        return ResponseEntity.ok(villages);
+    }
+
+    @GetMapping("/villages/by-province")
+    public ResponseEntity<List<Village>> getVillagesByProvince(@RequestParam String provinceName) {
+        List<Village> villages = locationService.getVillagesByProvince(provinceName);
+        return ResponseEntity.ok(villages);
+    }
+
+    @GetMapping("/villages/by-district")
+    public ResponseEntity<List<Village>> getVillagesByDistrict(@RequestParam String districtName) {
+        List<Village> villages = locationService.getVillagesByDistrict(districtName);
+        return ResponseEntity.ok(villages);
+    }
+
+    @GetMapping("/villages/by-sector")
+    public ResponseEntity<List<Village>> getVillagesBySector(@RequestParam String sectorName) {
+        List<Village> villages = locationService.getVillagesBySector(sectorName);
+        return ResponseEntity.ok(villages);
+    }
+
+    @GetMapping("/villages/by-cell")
+    public ResponseEntity<List<Village>> getVillagesByCell(@RequestParam String cellName) {
+        List<Village> villages = locationService.getVillagesByCell(cellName);
+        return ResponseEntity.ok(villages);
+    }
+}
