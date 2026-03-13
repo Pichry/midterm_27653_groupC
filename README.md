@@ -532,8 +532,8 @@ This project is created for educational purposes as part of a Spring Boot assess
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
+- GitHub: [@Pichry](https://github.com/Pichry)
+- Email: clesenceniyirema@gmail.com.com
 
 ---
 
